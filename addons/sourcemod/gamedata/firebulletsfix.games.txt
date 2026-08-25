@@ -1,4 +1,4 @@
-﻿"Games"
+"Games"
 {
 	"cstrike"
 	{
@@ -6,9 +6,9 @@
 		{
 			"Weapon_ShootPosition"
 			{
-				"windows"	"271"
-				"linux"		"272"
-				"mac"		"272"
+				"windows"	"272"
+				"linux"		"273"
+				"mac"		"273"
 			}
 		}
 	}
