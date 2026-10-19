@@ -13,7 +13,7 @@ public Plugin myinfo =
 	name = "Bullet position fix",
 	author = "xutaxkamay",
 	description = "Fixes shoot position",
-	version = "1.2.0",
+	version = "1.2.1",
 	url = "https://forums.alliedmods.net/showthread.php?p=2646571"
 };
 
