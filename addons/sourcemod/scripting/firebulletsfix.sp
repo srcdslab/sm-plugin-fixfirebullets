@@ -4,7 +4,7 @@
 #pragma newdecls required
 
 DynamicHook g_hWeapon_ShootPosition;
-Handle g_hWeapon_ShootPosition_SDKCall = INVALID_HANDLE;
+Handle g_hWeapon_ShootPosition_SDKCall = null;
 float g_vecOldWeaponShootPos[MAXPLAYERS + 1][3];
 bool g_bCallingWeapon_ShootPosition;
 
@@ -13,7 +13,7 @@ public Plugin myinfo =
 	name = "Bullet position fix",
 	author = "xutaxkamay",
 	description = "Fixes shoot position",
-	version = "1.2.1",
+	version = "1.2.2",
 	url = "https://forums.alliedmods.net/showthread.php?p=2646571"
 };
 
@@ -40,7 +40,7 @@ public void OnPluginStart()
 	PrepSDKCall_SetReturnInfo(SDKType_Vector, SDKPass_ByValue);
 	g_hWeapon_ShootPosition_SDKCall = EndPrepSDKCall();
 
-	if (g_hWeapon_ShootPosition_SDKCall == INVALID_HANDLE)
+	if (g_hWeapon_ShootPosition_SDKCall == null)
 		SetFailState("[FireBullets Fix] couldn't prepare Weapon_ShootPosition SDKCall");
 
 
