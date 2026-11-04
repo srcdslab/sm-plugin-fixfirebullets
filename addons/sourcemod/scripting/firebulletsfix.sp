@@ -4,7 +4,9 @@
 #pragma newdecls required
 
 DynamicHook g_hWeapon_ShootPosition;
+Handle g_hWeapon_ShootPosition_SDKCall = null;
 float g_vecOldWeaponShootPos[MAXPLAYERS + 1][3];
+bool g_bCallingWeapon_ShootPosition;
 
 public Plugin myinfo =
 {
@@ -29,6 +31,24 @@ public void OnPluginStart()
 
 	LogMessage("Found offset for Weapon_ShootPosition %d", offset);
 
+	// CS:S does not override CBasePlayer::Weapon_ShootPosition(), which returns EyePosition(). GetClientEyePosition()
+	// ends up there too (ClientEarPosition -> EarPosition -> EyePosition) and is much cheaper than an SDKCall, which
+	// also goes through our own hook. Other games can override Weapon_ShootPosition() (CS:GO adds the animation
+	// state eye offset), so they keep the SDKCall
+	if (GetEngineVersion() != Engine_CSS)
+	{
+		StartPrepSDKCall(SDKCall_Player);
+
+		if (!PrepSDKCall_SetFromConf(gameData, SDKConf_Virtual, "Weapon_ShootPosition"))
+			SetFailState("[FireBullets Fix] couldn't read config for preparing Weapon_ShootPosition SDKCall");
+
+		PrepSDKCall_SetReturnInfo(SDKType_Vector, SDKPass_ByValue);
+		g_hWeapon_ShootPosition_SDKCall = EndPrepSDKCall();
+
+		if (g_hWeapon_ShootPosition_SDKCall == null)
+			SetFailState("[FireBullets Fix] couldn't prepare Weapon_ShootPosition SDKCall");
+	}
+
 	g_hWeapon_ShootPosition = new DynamicHook(offset, HookType_Entity, ReturnType_Vector, ThisPointer_CBaseEntity);
 
 	if (!g_hWeapon_ShootPosition)
@@ -48,15 +68,25 @@ public void OnClientPutInServer(int client)
 
 public Action OnPlayerRunCmd(int client)
 {
-	// CBasePlayer::Weapon_ShootPosition() returns EyePosition(). Reading it directly avoids an SDKCall
-	// on every command, which went through our own hook and cost several times more than the rest
-	if (IsValidClient(client))
+	if (!IsValidClient(client))
+		return Plugin_Continue;
+
+	if (g_hWeapon_ShootPosition_SDKCall == null)
 		GetClientEyePosition(client, g_vecOldWeaponShootPos[client]);
+	else
+	{
+		g_bCallingWeapon_ShootPosition = true;
+		SDKCall(g_hWeapon_ShootPosition_SDKCall, client, g_vecOldWeaponShootPos[client]);
+		g_bCallingWeapon_ShootPosition = false;
+	}
 	return Plugin_Continue;
 }
 
 public MRESReturn Weapon_ShootPosition_Post(int client, DHookReturn hReturn)
 {
+	if (g_bCallingWeapon_ShootPosition)
+		return MRES_Ignored;
+
 	#if defined DEBUG
 	float g_vecWeaponShootPos[3];
 	hReturn.GetVector(g_vecWeaponShootPos);
